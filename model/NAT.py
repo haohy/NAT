@@ -3,7 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from torch.nn.init import xavier_uniform_
 import numpy as np
+
+from IPython import embed
 
 from .encoder import EncoderStack
 from .decoder import DecoderStack, PositionalEncoding
@@ -41,16 +44,22 @@ class NAT(nn.Module):
         self.fertility_predictor = FertilityPredictor(d_embed, L)
         self.decoder = DecoderStack(d_embed, nhead, max_seq_len, num_decoder_layers, dim_feedforward, dropout, activation)
         self.translation_predictor = TranslationPredictor(d_embed, vocab_tgt)
-        
+
+        self._reset_parameters()
+
     def forward(self, input):
+
         
         input_e = self.embedding_input(input.transpose(0,1)) # input_e: [S, N, E]
         input_pe = self.position_encoder_en(input_e) # input_pe: [S, N, E]
-        encoder_output = self.encoder(input_e) # encoder_output: [S, N, E] ---------------
+        encoder_output = self.encoder(input_pe) # encoder_output: [S, N, E]
         fertility_list = self.fertility_predictor(encoder_output) # fertility_list: [S, N]
         copied_embedding = self.copy_fertility(input_e, fertility_list, self.L) # copied_embedding: [T, N, E]
         copied_embedding_pe = self.position_encoder_de(copied_embedding) # copied_embedding_pe: [T, N, E]
         memory = encoder_output
+
+        # embed()
+
         decoder_output = self.decoder(copied_embedding_pe, memory) # decoder_output: [T, N, E]
         output = self.translation_predictor(decoder_output) # output: [T, N, E]
         
@@ -85,3 +94,10 @@ class NAT(nn.Module):
         copied_embedding = copied_embedding.transpose(0,1)
         
         return copied_embedding
+
+    def _reset_parameters(self):
+        r"""Initiate parameters in the transformer model."""
+
+        for p in self.parameters():
+            if p.dim() > 1:
+                xavier_uniform_(p)

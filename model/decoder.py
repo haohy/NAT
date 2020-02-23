@@ -62,7 +62,7 @@ class MultiHeadPositionalAttention(nn.Module):
         attn_output, _ = self.multi_head_attn(query, key, value, key_padding_mask, 
                                                                 need_weights, attn_mask)
         
-        return attn_output
+        return attn_output.contiguous()
 
 
 class DecoderLayer(nn.Module):
@@ -128,7 +128,7 @@ class DecoderLayer(nn.Module):
         tgt = tgt + self.dropout4(tgt2)
         tgt = self.norm4(tgt)
         
-        return tgt
+        return tgt.contiguous()
 
 
 class DecoderStack(nn.Module):
@@ -154,4 +154,4 @@ class DecoderStack(nn.Module):
                               tgt_key_padding_mask=tgt_key_padding_mask,
                               memory_key_padding_mask=memory_key_padding_mask)
         
-        return output
+        return output.contiguous()

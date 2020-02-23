@@ -21,6 +21,6 @@ class EncoderStack(nn.Module):
             src: [S, N, E]
             output: [S, N, E]
         """
-        output = self.encoder(src, mask, src_key_padding_mask)
+        output = self.encoder(src)
 
         return output
